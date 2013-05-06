@@ -22,7 +22,7 @@ class TRDI_ADCP_QARTOD_Tester(object):
         A convenience method to read in a file by path
         """
         m = Multiread(path, read_type)
-        return TRDI_ADCP_QARTOD_QAQC(m.read(), transducer_depth)
+        return TRDI_ADCP_QARTOD_Tester(m.read(), transducer_depth)
 
     def __init__(self, multiread_data, transducer_depth):
         self.data = multiread_data
