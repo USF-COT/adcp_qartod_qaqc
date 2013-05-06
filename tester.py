@@ -4,7 +4,7 @@ import numpy as np
 import numpy.ma as ma
 from datetime import datetime
 
-class TRDI_ADCP_QARTOD_QAQC(object):
+class TRDI_ADCP_QARTOD_Tester(object):
     """
     Performs QARTOD Data Quality Assurance and Control Tests on TRDI ADCP Data according to:
     "IOOS: Manual for Real-Time Quality Control of In-Situ Current Observations"
@@ -396,7 +396,7 @@ def main():
     parser.add_argument("transducer_height", type=float, help="Depth of ADCP transducer")
     args = parser.parse_args()
 
-    trdi_qaqc = TRDI_ADCP_QARTOD_QAQC.from_file(args.input_path, args.read_type, args.transducer_height)
+    trdi_qaqc = TRDI_ADCP_QARTOD_Tester.from_file(args.input_path, args.read_type, args.transducer_height)
     print 'Ensemble Bottom Bins: %s' % (trdi_qaqc.ensemble_bottoms,)
     
     return 1
