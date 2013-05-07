@@ -1,4 +1,4 @@
-trdi_adcp_qartod_qaqc-python
+ADCP QARTOD Tests - Python
 ============================
 
-QARTOD Quality Assurance and Control Test for Teledyne RD Instruments ADCP 
+QARTOD Quality Assurance and Control Test.  Implementation for TRDI ADCP included.  University of Hawaii PD0 libraries requred for TRDI ADCP implementation.
