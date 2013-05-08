@@ -168,7 +168,7 @@ class TRDIQAQC(object):
                 bottom_stats['last_good_bin'] - 1)
             self.ensemble_bottom_stats.append(bottom_stats)
 
-    def battery_flags(self):
+    def battery_flag(self):
         """
         QARTOD Test #1 Strongly Recommended
         battery flag test can not be performed
