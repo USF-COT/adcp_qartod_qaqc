@@ -10,8 +10,8 @@
 # By: Jeff Donovan <jdonovan@usf.edu>
 #     Michael Lindemuth <mlindemu@usf.edu>
 
+from itertools import izip
 
-import numpy as np
 
 ADCP_FLAGS = {'good': 1, 'questionable': 2, 'bad': 3}
 
@@ -105,7 +105,7 @@ def correlation_magnitude_test(ensemble_correlation,
     return bin_flags
 
 
-def percent_good_test(pg3, pg4, last_good_bin,
+def percent_good_test(one_bad_percent_data, all_good_percent_data,
                       percent_good=21, percent_bad=17):
     """
     QARTOD Test #9 Required
@@ -113,33 +113,38 @@ def percent_good_test(pg3, pg4, last_good_bin,
     default limits on this test are > 21%, good: < 17%, bad
     limits derived from TRDI Spreadsheet based on our instruments and setup
     """
-    pg_flag = (np.ones(last_good_bin)) * 2
-    pg_sum = (pg3[:last_good_bin]
-              + pg4[:last_good_bin])
-    pg_good = np.where(pg_sum > percent_good)
-    pg_bad = np.where(pg_sum < percent_bad)
-    pg_flag[pg_good] = ADCP_FLAGS['good']
-    pg_flag[pg_bad] = ADCP_FLAGS['bad']
+    pg_flags = []
+    for one_bad_percent, all_good_percent in izip(one_bad_percent_data,
+                                                  all_good_percent_data):
+        pg_sum = one_bad_percent + all_good_percent
+        if pg_sum >= percent_good:
+            pg_flags.append(ADCP_FLAGS['good'])
+        elif pg_sum <= percent_bad:
+            pg_flags.append(ADCP_FLAGS['bad'])
+        else:
+            pg_flags.append(ADCP_FLAGS['questionable'])
 
-    return pg_flag
+    return pg_flags
 
 
-def current_speed_test(current_speed, last_good_bin, max_speed=150):
+def current_speed_test(current_speed, max_speed=150):
     """
     QARTOD Test #10 Required
     current speed test
     150 cm/s is the West Florida Shelf limit.  Adjust as necessary
     """
 
-    current_speed_flags = np.ones(last_good_bin)
-    good_speed = current_speed[:last_good_bin]
-    bad_speed_index = np.where(good_speed > max_speed)
-    current_speed_flags[bad_speed_index] = 3
+    current_flags = []
+    for speed in current_speed:
+        if speed <= max_speed:
+            current_flags.append(ADCP_FLAGS['good'])
+        else:
+            current_flags.append(ADCP_FLAGS['bad'])
 
-    return current_speed_flags
+    return current_flags
 
 
-def current_direction_test(current_direction, last_good_bin):
+def current_direction_test(current_direction):
     """
     QARTOD Test #11 Required
     current direction test
@@ -147,19 +152,20 @@ def current_direction_test(current_direction, last_good_bin):
     Negative values are made positive by adding 360 to them
     """
 
-    current_direction_flags = np.ones(last_good_bin)
+    flags = []
+    for direction in current_direction:
+        if direction < 0.0:
+            direction += 360
 
-    current_good_direction = current_direction[:last_good_bin]
-    current_direction_negative = np.where(current_good_direction < 0.0)
-    current_good_direction[current_direction_negative] += 360
+        if direction <= 360:
+            flags.append(ADCP_FLAGS['good'])
+        else:
+            flags.append(ADCP_FLAGS['bad'])
 
-    bad_direction_index = np.where(current_good_direction > 360)
-    current_direction_flags[bad_direction_index] = 3
-
-    return current_direction_flags
+    return flags
 
 
-def horizontal_velocity_test(u, v, last_good_bin,
+def horizontal_velocity_test(u, v,
                              max_u_velocity=150, max_v_velocity=150):
     """
     QARTOD Test #12 Required
@@ -168,17 +174,17 @@ def horizontal_velocity_test(u, v, last_good_bin,
     150 cm/s is a local WFS limit
     """
 
-    hvel_flags = np.ones(last_good_bin)
+    flags = []
+    for u_vel, v_vel in izip(u, v):
+        if abs(u_vel) > max_u_velocity or abs(v_vel) > max_v_velocity:
+            flags.append(ADCP_FLAGS['bad'])
+        else:
+            flags.append(ADCP_FLAGS['good'])
 
-    u_index = np.where(abs(u[:last_good_bin]) > max_u_velocity)
-    v_index = np.where(abs(v[:last_good_bin]) > max_v_velocity)
-    hvel_flags[u_index] = 3
-    hvel_flags[v_index] = 3
-
-    return hvel_flags
+    return flags
 
 
-def vertical_velocity_test(w, last_good_bin,
+def vertical_velocity_test(w,
                            max_w_velocity=15):
     """
     QARTOD Test #13 Strongly Recommended
@@ -186,32 +192,36 @@ def vertical_velocity_test(w, last_good_bin,
     if w greater than 15 cm/s (10% MAX speed from TRDI), w is bad
     """
 
-    vvel_flags = np.ones(last_good_bin)
-    w_index = np.where(abs(w[:last_good_bin]) > 15.0)
-    vvel_flags[w_index] = 3
+    flags = []
+    for vel in w:
+        if abs(w) <= max_w_velocity:
+            flags.append(ADCP_FLAGS['good'])
+        else:
+            flags.append(ADCP_FLAGS['bad'])
 
-    return vvel_flags
+    return flags
 
 
-def error_velocity_test(error_velocities, last_good_bin,
+def error_velocity_test(error_velocities,
                         questionable_error_velocity=2.6,
                         bad_error_velocity=5.2):
     """
     QARTOD Test #14 Required
     error velocity test
     err < 2.6 cm/s, good: err > 5.2 cm/s, bad
-    limits derrived from TRDI Spreadsheed based on our instruments and setup
+    limits derrived from TRDI Spreadsheet based on our instruments and setup
     """
 
-    errvel_flag = (np.ones(last_good_bin))*2
-    err_good = np.where(abs(error_velocities[:last_good_bin])
-                        < questionable_error_velocity)
-    err_bad = np.where(abs(error_velocities[:last_good_bin])
-                       < bad_error_velocity)
-    errvel_flag[err_good] = 1
-    errvel_flag[err_bad] = 3
+    flags = []
+    for error_vel in error_velocities:
+        if error_vel < questionable_error_velocity:
+            flags.append(ADCP_FLAGS['good'])
+        elif error_vel < bad_error_velocity:
+            flags.append(ADCP_FLAGS['questionable'])
+        else:
+            flags.append(ADCP_FLAGS['bad'])
 
-    return errvel_flag
+    return flags
 
 
 def echo_intensity_test(echo_intensities, tolerance=2):
@@ -220,7 +230,7 @@ def echo_intensity_test(echo_intensities, tolerance=2):
     echo intensity test
     """
 
-    echo_int_flags = [1]
+    flags = [1]
     for bin_prev, bin_curr in zip(echo_intensities, echo_intensities[1:]):
         bin_flag_count = 0
         for beam_prev, beam_curr in zip(bin_prev, bin_curr):
@@ -229,13 +239,13 @@ def echo_intensity_test(echo_intensities, tolerance=2):
                 bin_flag_count += 1
 
         if bin_flag_count == 0:
-            echo_int_flags.append(1)
+            flags.append(ADCP_FLAGS['good'])
         elif bin_flag_count == 1:
-            echo_int_flags.append(2)
+            flags.append(ADCP_FLAGS['questionable'])
         else:
-            echo_int_flags.append(3)
+            flags.append(ADCP_FLAGS['bad'])
 
-    return echo_int_flags
+    return flags
 
 
 def range_drop_off_test(echo_intensities, drop_off_limit=60):
@@ -246,7 +256,7 @@ def range_drop_off_test(echo_intensities, drop_off_limit=60):
     The QARTOD recommended cut-off is 30. ???
     """
 
-    range_flags = []
+    flags = []
     for bin in echo_intensities:
         bin_flag_count = 0
         for beam in bin:
@@ -254,27 +264,27 @@ def range_drop_off_test(echo_intensities, drop_off_limit=60):
                 bin_flag_count += 1
 
         if bin_flag_count >= 2:
-            range_flags.append(3)
+            flags.append(ADCP_FLAGS['bad'])
         else:
-            range_flags.append(1)
+            flags.append(ADCP_FLAGS['good'])
 
-    return range_flags
+    return flags
 
 
-def current_speed_gradient_test(current_speed, last_good_bin,
+def current_speed_gradient_test(current_speed,
                                 tolerance=6):
     """
     QARTOD Test #17 Strongly Recommended
     current speed gradient test
     """
 
-    speed_flags = [1]
-    for speed_prev, speed_curr in zip(current_speed[:last_good_bin],
-                                      current_speed[1:last_good_bin]):
+    flags = [1]
+    for speed_prev, speed_curr in zip(current_speed,
+                                      current_speed[1:]):
         speed_diff = abs(speed_curr - speed_prev)
         if speed_diff <= tolerance:
-            speed_flags.append(1)
+            flags.append(ADCP_FLAGS['good'])
         else:
-            speed_flags.append(3)
+            flags.append(ADCP_FLAGS['bad'])
 
-    return speed_flags
+    return flags
