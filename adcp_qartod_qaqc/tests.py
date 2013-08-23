@@ -5,8 +5,6 @@
 # Integrated Ocean Observing Systems
 # Quality Assurance of Real-Time Oceanographic Data
 #
-# Depends on numpy
-#
 # By: Jeff Donovan <jdonovan@usf.edu>
 #     Michael Lindemuth <mlindemu@usf.edu>
 
@@ -39,37 +37,34 @@ def checksum_test(ensemble):
     return ADCP_FLAGS['good']
 
 
-def bit_test(ensemble_VL):
+def bit_test(bit_flag):
     """
     Not an official QARTOD test.  Checks special TRDI bit flag.
     """
-    bit = ensemble_VL[9]
-    if bit == '0':
+    if bit_flag == '0':
         return ADCP_FLAGS['good']
     else:
         return ADCP_FLAGS['bad']
 
 
-def orientation_test(pitches, rolls, max_pitch=20, max_roll=20):
+def orientation_test(pitch, roll, max_pitch=20, max_roll=20):
     """
     QARTOD Test #3 Required: orientation (pitch and roll) tests
     """
-    tilt_flags = []
-    for pitch, roll in zip(pitches, rolls):
-        if (abs(pitch) < max_pitch and abs(roll) < max_roll):
-            tilt_flags.append(ADCP_FLAGS['good'])
-        else:
-            tilt_flags.append(ADCP_FLAGS['bad'])
+    if (abs(pitch) < max_pitch and abs(roll) < max_roll):
+        tilt_flag = ADCP_FLAGS['good']
+    else:
+        tilt_flag = ADCP_FLAGS['bad']
 
-    return tilt_flags
+    return tilt_flag
 
 
-def sound_speed_test(ensemble_VL, sound_speed_min=1400, sound_speed_max=1600):
+def sound_speed_test(sound_speed_velocity,
+                     sound_speed_min=1400, sound_speed_max=1600):
     """
     QARTOD Test 4 Required: Sound speed test
     """
-    ssv = ensemble_VL[10]
-    if (ssv > sound_speed_min and ssv < sound_speed_max):
+    if (sound_speed_velocity >= sound_speed_min and sound_speed_velocity <= sound_speed_max):  # NOQA
         return ADCP_FLAGS['good']
     else:
         return ADCP_FLAGS['bad']
@@ -194,7 +189,7 @@ def vertical_velocity_test(w,
 
     flags = []
     for vel in w:
-        if abs(w) <= max_w_velocity:
+        if abs(vel) <= max_w_velocity:
             flags.append(ADCP_FLAGS['good'])
         else:
             flags.append(ADCP_FLAGS['bad'])

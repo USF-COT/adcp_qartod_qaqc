@@ -49,13 +49,20 @@ class TRDIQAQC(object):
         east (u), north(v), and vertical(w) velocities
         """
 
+        self.u = []
+        self.v = []
+        self.w = []
         self.z = []
         self.current_speed = []
         self.current_direction = []
         for bin in self.data['velocity']['data']:
             u = bin[0]
             v = bin[1]
+            w = bin[2]
             z = u + 1j + v
+            self.u.append(u)
+            self.v.append(v)
+            self.w.append(w)
             self.z.append(z)
 
             self.current_speed.append(abs(z))
@@ -170,9 +177,9 @@ class TRDIQAQC(object):
         limits derived from TRDI Spreadsheed based on our instruments and setup
         """
         one_bad_percent = imap(itemgetter(2),
-                               self.data['percent_good'][:self.last_good_bin])
+                               self.data['percent_good']['data'][:self.last_good_bin])  # NOQA
         all_good_percent = imap(itemgetter(3),
-                                self.data['percent_good'][:self.last_good_bin])
+                                self.data['percent_good']['data'][:self.last_good_bin])  # NOQA
         return (
             percent_good_test(one_bad_percent, all_good_percent,
                               percent_good, percent_bad)
