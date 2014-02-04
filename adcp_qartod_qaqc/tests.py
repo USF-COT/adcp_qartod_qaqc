@@ -87,7 +87,7 @@ def noise_floor_test(ensemble):
     return ADCP_FLAGS['no_test']
 
 
-def signal_strength_flag(ensemble):
+def signal_strength_test(ensemble):
     """
     QARTOD Test #6 Strongly Recommended
     For TRDI ADCP's signal strength data is not available.
