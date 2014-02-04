@@ -11,29 +11,34 @@
 from itertools import izip
 
 
-ADCP_FLAGS = {'good': 1, 'questionable': 2, 'bad': 3}
+ADCP_FLAGS = {
+    'good': 1,
+    'no_test': 2,
+    'suspect': 3,
+    'bad': 4,
+    'missing_data': 9
+}
 
 
 def battery_flag_test(ensemble):
     """
     QARTOD Test #1 Strongly Recommended
-    battery flag test can not be performed ... if the GOES header f_code=G and
-    the data can be decoded, then sample is good
-
-    TODO: IMPLEMENT
+    For TRDI ADCP's the battery flag test can not be performed. Confirmation
+    that battery information is not sent out in data files was recieved by
+    e-mail on 01/24/2014 from TRDI Field Service (Wilbur Rotoni)
     """
-    return ADCP_FLAGS['good']
+
+    return ADCP_FLAGS['no_test']
 
 
 def checksum_test(ensemble):
     """
     QARTOD Test #2 Required
-    Checksum test can not be performed because data is converted to/from
-    Psuedo-ASCII during the GOES transmission... if the GOES header
-    f_code=G and the data can be decoded, then sample is good
-
-    TODO: IMPLEMENT
+    The fact that this code is running means that the checksum was tested
+    and passed the test. If the checksum test fails, we will not load anything
+    into the database.
     """
+
     return ADCP_FLAGS['good']
 
 
@@ -41,6 +46,7 @@ def bit_test(bit_flag):
     """
     Not an official QARTOD test.  Checks special TRDI bit flag.
     """
+
     if bit_flag == '0':
         return ADCP_FLAGS['good']
     else:
@@ -51,6 +57,7 @@ def orientation_test(pitch, roll, max_pitch=20, max_roll=20):
     """
     QARTOD Test #3 Required: orientation (pitch and roll) tests
     """
+
     if (abs(pitch) < max_pitch and abs(roll) < max_roll):
         tilt_flag = ADCP_FLAGS['good']
     else:
@@ -64,36 +71,63 @@ def sound_speed_test(sound_speed_velocity,
     """
     QARTOD Test 4 Required: Sound speed test
     """
+
     if (sound_speed_velocity >= sound_speed_min and sound_speed_velocity <= sound_speed_max):  # NOQA
         return ADCP_FLAGS['good']
     else:
         return ADCP_FLAGS['bad']
 
-# TODO: Implement Tests 5, 6, and 7 for other ADCP types
-# NOTE: QARTOD Tests 5, 6, and 7 cannot be performed on TRDI ADCP
+
+def noise_floor_test(ensemble):
+    """
+    QARTOD Test #5 Strongly Recommended
+    For TRDI ADCP's noise floor data is not available.
+    """
+
+    return ADCP_FLAGS['no_test']
+
+
+def signal_strength_flag(ensemble):
+    """
+    QARTOD Test #6 Strongly Recommended
+    For TRDI ADCP's signal strength data is not available.
+    """
+
+    return ADCP_FLAGS['no_test']
+
+
+def signal_to_noise_test(ensemble):
+    """
+    QARTOD Test #7 Strongly Recommended
+    For TRDI ADCP's signal to noise data is not available.
+    """
+
+    return ADCP_FLAGS['no_test']
 
 
 def correlation_magnitude_test(ensemble_correlation,
-                               good_tolerance=115, questionable_tolerance=64):
+                               good_tolerance=115, suspect_tolerance=64):
     """
     QARTOD Test #8 Strongly Recommended
     correlation magnitude test
+    limits derived from TRDI Spreadsheet based on our instruments and setup
     """
+
     bin_flags = []
     for bin in ensemble_correlation:
-        counts = {'good': 0, 'questionable': 0, 'bad': 0}
+        counts = {'good': 0, 'suspect': 0, 'bad': 0}
         for beam_correlation in bin:
             if beam_correlation >= good_tolerance:
                 counts['good'] += 1
-            elif beam_correlation >= questionable_tolerance:
-                counts['questionable'] += 1
+            elif beam_correlation >= suspect_tolerance:
+                counts['suspect'] += 1
             else:
                 counts['bad'] += 1
 
         if counts['good'] == len(bin):
             bin_flags.append(ADCP_FLAGS['good'])
-        elif counts['good'] + counts['questionable'] >= 3:
-            bin_flags.append(ADCP_FLAGS['questionable'])
+        elif counts['good'] + counts['suspect'] >= 3:
+            bin_flags.append(ADCP_FLAGS['suspect'])
         else:
             bin_flags.append(ADCP_FLAGS['bad'])
 
@@ -108,6 +142,7 @@ def percent_good_test(one_bad_percent_data, all_good_percent_data,
     default limits on this test are > 21%, good: < 17%, bad
     limits derived from TRDI Spreadsheet based on our instruments and setup
     """
+
     pg_flags = []
     for one_bad_percent, all_good_percent in izip(one_bad_percent_data,
                                                   all_good_percent_data):
@@ -117,7 +152,7 @@ def percent_good_test(one_bad_percent_data, all_good_percent_data,
         elif pg_sum <= percent_bad:
             pg_flags.append(ADCP_FLAGS['bad'])
         else:
-            pg_flags.append(ADCP_FLAGS['questionable'])
+            pg_flags.append(ADCP_FLAGS['suspect'])
 
     return pg_flags
 
@@ -179,12 +214,11 @@ def horizontal_velocity_test(u, v,
     return flags
 
 
-def vertical_velocity_test(w,
-                           max_w_velocity=15):
+def vertical_velocity_test(w, max_w_velocity=15):
     """
     QARTOD Test #13 Strongly Recommended
     vertical velocity test
-    if w greater than 15 cm/s (10% MAX speed from TRDI), w is bad
+    if w greater than 15 cm/s (10% MAX speed from WFS), w is bad
     """
 
     flags = []
@@ -198,7 +232,7 @@ def vertical_velocity_test(w,
 
 
 def error_velocity_test(error_velocities,
-                        questionable_error_velocity=2.6,
+                        suspect_error_velocity=2.6,
                         bad_error_velocity=5.2):
     """
     QARTOD Test #14 Required
@@ -209,19 +243,31 @@ def error_velocity_test(error_velocities,
 
     flags = []
     for error_vel in error_velocities:
-        if error_vel < questionable_error_velocity:
+        if error_vel < suspect_error_velocity:
             flags.append(ADCP_FLAGS['good'])
         elif error_vel < bad_error_velocity:
-            flags.append(ADCP_FLAGS['questionable'])
+            flags.append(ADCP_FLAGS['suspect'])
         else:
             flags.append(ADCP_FLAGS['bad'])
 
     return flags
 
 
+def stuck_sensor_test(ensemble):
+    """
+    QARTOD Test #15 Strongly Recommended
+    This test will not be performed. For as long as I have been involved
+    in QARTOD, real time tests were meant to be performed on the current
+    sample as if it were the only sample. This test requires examinimg the
+    historical samples and is therefore NOT a real time data test.
+    """
+
+    return ADCP_FLAGS['no_test']
+
+
 def echo_intensity_test(echo_intensities, tolerance=2):
     """
-    QARTOD Test #15 Required
+    QARTOD Test #16 Required
     echo intensity test
     """
 
@@ -236,7 +282,7 @@ def echo_intensity_test(echo_intensities, tolerance=2):
         if bin_flag_count == 0:
             flags.append(ADCP_FLAGS['good'])
         elif bin_flag_count == 1:
-            flags.append(ADCP_FLAGS['questionable'])
+            flags.append(ADCP_FLAGS['suspect'])
         else:
             flags.append(ADCP_FLAGS['bad'])
 
@@ -245,7 +291,7 @@ def echo_intensity_test(echo_intensities, tolerance=2):
 
 def range_drop_off_test(echo_intensities, drop_off_limit=60):
     """
-    QARTOD Test #16 Strongly Recommended
+    QARTOD Test #17 Strongly Recommended
     range drop-off test
     Range Limit set to 60 as recommended in QARTOD spreadsheet (CO-OPS).
     The QARTOD recommended cut-off is 30. ???
@@ -269,7 +315,7 @@ def range_drop_off_test(echo_intensities, drop_off_limit=60):
 def current_speed_gradient_test(current_speed,
                                 tolerance=6):
     """
-    QARTOD Test #17 Strongly Recommended
+    QARTOD Test #18 Strongly Recommended
     current speed gradient test
     """
 

@@ -10,6 +10,9 @@ from adcp_qartod_qaqc.tests import (
     bit_test,
     orientation_test,
     sound_speed_test,
+    noise_floor_test,
+    signal_strength_test,
+    signal_to_noise_test,
     correlation_magnitude_test,
     percent_good_test,
     current_speed_test,
@@ -17,6 +20,7 @@ from adcp_qartod_qaqc.tests import (
     horizontal_velocity_test,
     vertical_velocity_test,
     error_velocity_test,
+    stuck_sensor_test,
     echo_intensity_test,
     range_drop_off_test,
     current_speed_gradient_test
@@ -111,19 +115,19 @@ class TRDIQAQC(object):
     def battery_flag(self):
         """
         QARTOD Test #1 Strongly Recommended
-        battery flag test can not be performed
-        if the GOES header f_code=G and the data can be
-        decoded, then sample is good
+        For TRDI ADCP's the battery flag test can not be performed.
+        Confirmation that battery information is not sent out in
+        data files was recieved by e-mail on 01/24/2014 from
+        TRDI Field Service (Wilbur Rotoni)
         """
         return battery_flag_test(self.data)
 
     def checksum_flag(self):
         """
         QARTOD Test #2 Required
-        Checksum test can not be performed because
-        data is converted to/from Psuedo-ASCII during the
-        GOES transmission. If the GOES header f_code=G
-        and the data can be decoded, then sample is good
+        The fact that this code is running means that the checksum was tested
+        and passed the test. If the checksum test fails, we will
+        not load anything into the database.
         """
         return checksum_test(self.data)
 
@@ -153,7 +157,26 @@ class TRDIQAQC(object):
                              sound_speed_min, sound_speed_max)
         )
 
-    # NOTE: QARTOD Tests 5, 6, and 7 cannot be performed on TRDI ADCP
+    def noise_floor_flag(self):
+        """
+        QARTOD Test #5 Strongly Recommended
+        For TRDI ADCP's noise floor data is not available.
+        """
+        return noise_floor_test(self.data)
+
+    def signal_strength_flag(self):
+        """
+        QARTOD Test #6 Strongly Recommended
+        For TRDI ADCP's noise floor data is not available.
+        """
+        return signal_strength_test(self.data)
+
+    def signal_to_noise_flag(self):
+        """
+        QARTOD Test #7 Strongly Recommended
+        For TRDI ADCP's noise floor data is not available.
+        """
+        return signal_to_noise_test(self.data)
 
     def correlation_magnitude_flags(self,
                                     good_tolerance=115,
@@ -244,9 +267,20 @@ class TRDIQAQC(object):
                                    questionable_error_velocity,
                                    bad_error_velocity)
 
+    def stuck_sensor_flag(self):
+        """
+        QARTOD Test #15 Strongly Recommended
+        This test will not be performed. For as long as I have been involved
+        in QARTOD, real time tests were meant to be performed on the current
+        sample as if it were the only sample. This test requires examinimg the
+        historical samples and is therefore NOT a real time data test.
+        """
+
+        return stuck_sensor_test(self.data)
+
     def echo_intensity_flags(self, tolerance=2):
         """
-        QARTOD Test #15 Required
+        QARTOD Test #16 Required
         echo intensity test
         """
 
@@ -255,7 +289,7 @@ class TRDIQAQC(object):
 
     def range_drop_off_flags(self, drop_off_limit=60):
         """
-        QARTOD Test #16 Strongly Recommended
+        QARTOD Test #17 Strongly Recommended
         range drop-off test
         Range Limit set to 60 as recommended in QARTOD spreadsheet (CO-OPS).
         The QARTOD recommended cut-off is 30. ???
@@ -266,7 +300,7 @@ class TRDIQAQC(object):
 
     def current_speed_gradient_flags(self, tolerance=6):
         """
-        QARTOD Test #17 Strongly Recommended
+        QARTOD Test #18 Strongly Recommended
         current speed gradient test
         """
 
