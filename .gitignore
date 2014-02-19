@@ -36,3 +36,5 @@ nosetests.xml
 
 # VIM Swap Files
 .*.swp
+
+test_data/*

@@ -41,8 +41,15 @@ class TRDIQAQC(object):
     College of Marine Science
     """
 
-    def __init__(self, data):
+    def __init__(self, data, transducer_depth=None):
         self.data = data
+
+        if transducer_depth is not None:
+            self.transducer_depth = transducer_depth
+        else:
+            self.transducer_depth = (
+                self.data['variable_leader']['depth_of_transducer']
+            )
 
         self.__read_velocities()
         self.__calc_bottom_stats()
@@ -79,7 +86,7 @@ class TRDIQAQC(object):
         for bin_prev, bin_curr in zip(intensity, intensity[1:]):
             bin_flag_count = 0
             for beam_prev, beam_curr in zip(bin_prev, bin_curr):
-                bin_diff = beam_curr - beam_prev
+                bin_diff = abs(beam_curr - beam_prev)
                 if bin_diff > tolerance:
                     bin_flag_count += 1
 
@@ -90,10 +97,13 @@ class TRDIQAQC(object):
 
         bottom_stats = {}
         bottom_stats['bottom_bin'] = bottom_bin
+        bin_1_distance = (
+            (self.data['fixed_leader']['bin_1_distance'] + self.transducer_depth) / 100  # NOQA
+        )
         bottom_stats['range_to_bottom'] = (
             bottom_stats['bottom_bin'] *
-            self.data['fixed_leader']['number_of_cells'] / 100.0 +
-            self.data['fixed_leader']['bin_1_distance'] / 100.0
+            self.data['fixed_leader']['depth_cell_length'] / 100.0 +
+            bin_1_distance
         )
         bottom_stats['side_lobe_start'] = (
             int(
