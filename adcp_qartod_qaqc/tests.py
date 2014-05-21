@@ -253,10 +253,21 @@ def error_velocity_test(error_velocities,
     return flags
 
 
-def stuck_sensor_test(ensemble):
+def stuck_sensor_test(echo_intensities, previous_intensities, tolerance=4):
     """
     QARTOD Test #15 Strongly Recommended
-    This test will not be performed. For as long as I have been involved
+
+    Input:
+        echo_intensities - A set of ADCP echo intensity bins
+        previous_intensities - A set of previous echo intensities
+        tolerance (optional) - the number of same sensor values
+            allowed.  Default: 4
+
+    Output:
+        flags - Flags for each beam
+
+    NOTE:
+    This test is not performed by COMPS. For as long as I have been involved
     in QARTOD, real time tests were meant to be performed on the current
     sample as if it were the only sample. This test requires examinimg the
     historical samples and is therefore NOT a real time data test.

@@ -20,7 +20,7 @@ class TestBaseTests(unittest.TestCase):
 class TestTRDIQAQC(unittest.TestCase):
 
     def setUp(self):
-        self.trdi_data = read_PD15_file('./test_data/1407C626', header_lines=2)
+        self.trdi_data = read_PD15_file('./test_data/1407B0B6', header_lines=2)
         self.qaqc = TRDIQAQC(self.trdi_data, transducer_depth=104)
         print self.trdi_data
 
