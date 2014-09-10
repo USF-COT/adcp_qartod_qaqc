@@ -97,13 +97,13 @@ class TRDIQAQC(object):
 
         bottom_stats = {}
         bottom_stats['bottom_bin'] = bottom_bin
-        bin_1_distance = (
+        self.data['fixed_leader']['bin_1_distance'] = (
             (self.data['fixed_leader']['bin_1_distance'] + self.transducer_depth) / 100  # NOQA
         )
         bottom_stats['range_to_bottom'] = (
             bottom_stats['bottom_bin'] *
             self.data['fixed_leader']['depth_cell_length'] / 100.0 +
-            bin_1_distance
+            self.data['fixed_leader']['bin_1_distance'] / 100.0
         )
         bottom_stats['side_lobe_start'] = (
             int(
