@@ -70,7 +70,7 @@ class TRDIQAQC(object):
             u = bin[0]
             v = bin[1]
             w = bin[2]
-            z = u + 1j + v
+            z = u + 1j * v
             self.u.append(u)
             self.v.append(v)
             self.w.append(w)
