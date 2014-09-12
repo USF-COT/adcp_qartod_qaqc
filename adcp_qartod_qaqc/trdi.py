@@ -78,6 +78,9 @@ class TRDIQAQC(object):
 
             self.current_speed.append(abs(z))
             direction = math.atan2(z.real, z.imag)*180/math.pi
+                 if direction < 360:
+                    direction = direction + 360
+
             self.current_direction.append(direction)
 
     def __calc_bottom_stats(self, tolerance=30):
